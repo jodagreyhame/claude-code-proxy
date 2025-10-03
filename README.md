@@ -33,7 +33,7 @@ cp .env.example .env
 
 # 3. Configure Claude Code (shell environment only)
 export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
-export ANTHROPIC_DEFAULT_OPUS_MODEL=gemini-1.5-pro
+export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6
 export ANTHROPIC_BASE_URL=http://localhost:8082  # ⚠️ CRITICAL
 
 # 4. Start proxy & use Claude Code

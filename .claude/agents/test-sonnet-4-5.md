@@ -1,5 +1,6 @@
 ---
 name: test-sonnet-4-5
+description: Test agent for Claude Sonnet 4.5 with OAuth passthrough
 model: claude-sonnet-4-5
 ---
 

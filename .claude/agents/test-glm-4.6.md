@@ -1,6 +1,7 @@
 ---
 name: test-glm-4.6
-model: glm-4.6
+description: Test agent for GLM-4.6 model routing through the proxy
+model: opus
 ---
 
 # Test Agent for GLM-4.6

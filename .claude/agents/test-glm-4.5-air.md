@@ -1,5 +1,6 @@
 ---
 name: test-glm-4.5-air
+description: Test agent for GLM-4.5-air model routing through the proxy
 model: glm-4.5-air
 ---
 
