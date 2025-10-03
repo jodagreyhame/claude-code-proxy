@@ -35,6 +35,8 @@ Usage:
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import StreamingResponse
+from starlette.background import BackgroundTask
+from contextlib import asynccontextmanager
 import httpx
 import os
 from pathlib import Path
@@ -46,7 +48,19 @@ try:
 except ImportError:
     pass  # dotenv not installed, will use environment variables
 
-app = FastAPI(title="Custom Model Proxy for Claude Code")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifecycle - create persistent HTTP client"""
+    # Startup: Create persistent client with connection pooling
+    app.state.http_client = httpx.AsyncClient(timeout=120.0)
+    yield
+    # Shutdown: Clean up client
+    await app.state.http_client.aclose()
+
+app = FastAPI(
+    title="Custom Model Proxy for Claude Code",
+    lifespan=lifespan
+)
 
 # Configuration - 3 separate providers (loaded from .env or environment)
 HAIKU_API_KEY = os.getenv("HAIKU_PROVIDER_API_KEY")
@@ -125,32 +139,33 @@ async def proxy_messages(request: Request):
 
         print(f"[Proxy] {original_model} → Real Anthropic (OAuth)")
 
+    # Get persistent client from app state
+    client = request.app.state.http_client
+
+    # Forward request
     if is_streaming:
         target_headers["Accept"] = "text/event-stream"
 
-    # Forward request
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        if is_streaming:
-            async def stream_generator():
-                async with client.stream(
-                    "POST", target_url, json=data, headers=target_headers
-                ) as response:
-                    async for chunk in response.aiter_bytes():
-                        yield chunk
+        # Use build_request + send for manual streaming mode
+        req = client.build_request(
+            "POST", target_url, json=data, headers=target_headers
+        )
+        response = await client.send(req, stream=True)
 
-            return StreamingResponse(
-                stream_generator(),
-                media_type="text/event-stream"
-            )
-        else:
-            response = await client.post(
-                target_url, json=data, headers=target_headers
-            )
-            return Response(
-                content=response.content,
-                status_code=response.status_code,
-                headers=dict(response.headers)
-            )
+        return StreamingResponse(
+            response.aiter_bytes(),
+            media_type="text/event-stream",
+            background=BackgroundTask(response.aclose)  # Critical: cleanup
+        )
+    else:
+        response = await client.post(
+            target_url, json=data, headers=target_headers
+        )
+        return Response(
+            content=response.content,
+            status_code=response.status_code,
+            headers=dict(response.headers)
+        )
 
 
 @app.get("/health")
