@@ -27,13 +27,11 @@ Sonnet (claude-sonnet)  → Real Anthropic (OAuth)
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Configure providers
-export HAIKU_PROVIDER_API_KEY=your_glm_api_key
-export HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
-export OPUS_PROVIDER_API_KEY=your_gemini_api_key
-export OPUS_PROVIDER_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+# 2. Configure providers in .env file
+cp .env.example .env
+# Edit .env with your API keys
 
-# 3. Configure Claude Code
+# 3. Configure Claude Code (shell environment only)
 export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
 export ANTHROPIC_DEFAULT_OPUS_MODEL=gemini-1.5-pro
 export ANTHROPIC_BASE_URL=http://localhost:8082  # ⚠️ CRITICAL
@@ -42,6 +40,10 @@ export ANTHROPIC_BASE_URL=http://localhost:8082  # ⚠️ CRITICAL
 python proxy.py &
 claude
 ```
+
+**What goes where:**
+- **`.env` file** → Provider API keys and URLs (read by proxy)
+- **Shell env vars** → Claude Code model configs only
 
 **📖 [Full Setup Guide →](SETUP.md)** (includes Windows, troubleshooting, examples)
 

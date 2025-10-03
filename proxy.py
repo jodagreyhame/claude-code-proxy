@@ -37,10 +37,18 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import StreamingResponse
 import httpx
 import os
+from pathlib import Path
+
+# Load .env file for provider configs
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not installed, will use environment variables
 
 app = FastAPI(title="Custom Model Proxy for Claude Code")
 
-# Configuration - 3 separate providers
+# Configuration - 3 separate providers (loaded from .env or environment)
 HAIKU_API_KEY = os.getenv("HAIKU_PROVIDER_API_KEY")
 HAIKU_BASE_URL = os.getenv("HAIKU_PROVIDER_BASE_URL")
 

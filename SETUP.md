@@ -26,7 +26,9 @@ pip install -r requirements.txt
 python -m pip install -r requirements.txt
 ```
 
-### 2. Configure Providers
+### 2. Configure Providers (`.env` file)
+
+**IMPORTANT:** Provider configs go in `.env` file (read by proxy). You do NOT need to `export` these!
 
 Create `.env` file:
 
@@ -42,7 +44,7 @@ Copy-Item .env.example .env
 notepad .env  # or code .env
 ```
 
-Add your provider credentials for each tier:
+Edit `.env` and add your provider credentials:
 
 ```bash
 # Haiku provider
@@ -53,10 +55,15 @@ HAIKU_PROVIDER_BASE_URL=https://api.provider.com/v1
 OPUS_PROVIDER_API_KEY=your_opus_api_key
 OPUS_PROVIDER_BASE_URL=https://api.provider.com/v1
 
-# Sonnet provider (optional - leave empty to use real Claude)
+# Sonnet provider (optional - leave commented to use real Claude)
 # SONNET_PROVIDER_API_KEY=your_sonnet_api_key
 # SONNET_PROVIDER_BASE_URL=https://api.provider.com/v1
+
+# Port (optional, defaults to 8082)
+PORT=8082
 ```
+
+**Note:** The proxy loads these from `.env` automatically - no need to export them!
 
 ### 3. Set Claude Code Environment Variables
 
@@ -124,14 +131,10 @@ Select Haiku, Opus, or Sonnet from the UI - routing is automatic!
 **Add to your shell config (`~/.zshrc` for zsh or `~/.bashrc` for bash):**
 
 ```bash
-# Claude Code Proxy Configuration
-export HAIKU_PROVIDER_API_KEY=your_glm_api_key
-export HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
-export OPUS_PROVIDER_API_KEY=your_gemini_api_key
-export OPUS_PROVIDER_BASE_URL=https://generativelanguage.googleapis.com/v1beta
-
+# Claude Code Configuration (provider configs are in .env file)
 export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
 export ANTHROPIC_DEFAULT_OPUS_MODEL=gemini-1.5-pro
+# export ANTHROPIC_DEFAULT_SONNET_MODEL=llama3.1  # Optional
 
 # ⚠️ This line enables the proxy interception
 export ANTHROPIC_BASE_URL=http://localhost:8082
@@ -141,6 +144,8 @@ Then reload:
 ```bash
 source ~/.zshrc  # or source ~/.bashrc
 ```
+
+**Note:** Provider API keys and URLs are in `.env` file, not in shell config!
 
 ### Windows (PowerShell)
 
@@ -153,14 +158,10 @@ notepad $PROFILE
 
 Add these lines:
 ```powershell
-# Claude Code Proxy Configuration
-$env:HAIKU_PROVIDER_API_KEY = "your_glm_api_key"
-$env:HAIKU_PROVIDER_BASE_URL = "https://api.z.ai/api/anthropic"
-$env:OPUS_PROVIDER_API_KEY = "your_gemini_api_key"
-$env:OPUS_PROVIDER_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
-
+# Claude Code Configuration (provider configs are in .env file)
 $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.5-air"
 $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "gemini-1.5-pro"
+# $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "llama3.1"  # Optional
 
 # ⚠️ This line enables the proxy interception
 $env:ANTHROPIC_BASE_URL = "http://localhost:8082"
@@ -171,14 +172,12 @@ Then reload:
 . $PROFILE
 ```
 
+**Note:** Provider API keys and URLs are in `.env` file, not in PowerShell profile!
+
 **Option 2: System Environment Variables (Permanent)**
 
 Use `setx` to set permanent environment variables:
 ```powershell
-setx HAIKU_PROVIDER_API_KEY "your_glm_api_key"
-setx HAIKU_PROVIDER_BASE_URL "https://api.z.ai/api/anthropic"
-setx OPUS_PROVIDER_API_KEY "your_gemini_api_key"
-setx OPUS_PROVIDER_BASE_URL "https://generativelanguage.googleapis.com/v1beta"
 setx ANTHROPIC_DEFAULT_HAIKU_MODEL "glm-4.5-air"
 setx ANTHROPIC_DEFAULT_OPUS_MODEL "gemini-1.5-pro"
 setx ANTHROPIC_BASE_URL "http://localhost:8082"
@@ -187,7 +186,8 @@ setx ANTHROPIC_BASE_URL "http://localhost:8082"
 ⚠️ **Note:** `setx` requires restarting your terminal. For current session, also run:
 ```powershell
 $env:ANTHROPIC_BASE_URL = "http://localhost:8082"
-# ... (repeat for other vars)
+$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.5-air"
+$env:ANTHROPIC_DEFAULT_OPUS_MODEL = "gemini-1.5-pro"
 ```
 
 **Option 3: GUI (System Properties)**
@@ -220,34 +220,36 @@ python proxy.py
 
 ### Example 1: GLM Only (Simple)
 
-Use GLM for all tiers:
+Use GLM for all tiers.
 
-**macOS/Linux:**
+**Edit `.env` file:**
 ```bash
 # All tiers use GLM
-export HAIKU_PROVIDER_API_KEY=your_glm_api_key
-export HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
-export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
+HAIKU_PROVIDER_API_KEY=your_glm_api_key
+HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
-export OPUS_PROVIDER_API_KEY=your_glm_api_key
-export OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
-export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6
+OPUS_PROVIDER_API_KEY=your_glm_api_key
+OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
-# Sonnet uses real Claude (no config)
+# Sonnet uses real Claude (leave commented)
+# SONNET_PROVIDER_API_KEY=
+# SONNET_PROVIDER_BASE_URL=
 ```
 
-**Windows (PowerShell):**
+**Set Claude Code env vars (shell):**
+
+macOS/Linux:
+```bash
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
+export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6
+export ANTHROPIC_BASE_URL=http://localhost:8082
+```
+
+Windows:
 ```powershell
-# All tiers use GLM
-$env:HAIKU_PROVIDER_API_KEY = "your_glm_api_key"
-$env:HAIKU_PROVIDER_BASE_URL = "https://api.z.ai/api/anthropic"
 $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.5-air"
-
-$env:OPUS_PROVIDER_API_KEY = "your_glm_api_key"
-$env:OPUS_PROVIDER_BASE_URL = "https://api.z.ai/api/anthropic"
 $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-4.6"
-
-# Sonnet uses real Claude (no config)
+$env:ANTHROPIC_BASE_URL = "http://localhost:8082"
 ```
 
 **Available GLM models:**
@@ -258,40 +260,54 @@ $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-4.6"
 
 ### Example 2: Multi-Provider Mix (Power User)
 
-Mix different providers for optimal cost/performance:
+Mix different providers for optimal cost/performance.
 
+**Edit `.env` file:**
 ```bash
 # Haiku → GLM (fastest, cheapest)
-export HAIKU_PROVIDER_API_KEY=your_glm_api_key
-export HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
-export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4-flash
+HAIKU_PROVIDER_API_KEY=your_glm_api_key
+HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
 # Opus → Gemini (balanced)
-export OPUS_PROVIDER_API_KEY=your_gemini_api_key
-export OPUS_PROVIDER_BASE_URL=https://generativelanguage.googleapis.com/v1beta
-export ANTHROPIC_DEFAULT_OPUS_MODEL=gemini-1.5-pro
+OPUS_PROVIDER_API_KEY=your_gemini_api_key
+OPUS_PROVIDER_BASE_URL=https://generativelanguage.googleapis.com/v1beta
 
-# Sonnet → Real Claude (premium, OAuth subscription)
-# No config needed
+# Sonnet → Real Claude (leave commented)
+# SONNET_PROVIDER_API_KEY=
+# SONNET_PROVIDER_BASE_URL=
+```
+
+**Set Claude Code env vars (shell):**
+```bash
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4-flash
+export ANTHROPIC_DEFAULT_OPUS_MODEL=gemini-1.5-pro
+export ANTHROPIC_BASE_URL=http://localhost:8082
 ```
 
 ### Example 3: Local + Cloud Hybrid
 
-Mix local Ollama with cloud providers:
+Mix local Ollama with cloud providers.
 
+**Edit `.env` file:**
 ```bash
 # Haiku → Local Ollama (free!)
-export HAIKU_PROVIDER_API_KEY=dummy
-export HAIKU_PROVIDER_BASE_URL=http://localhost:11434
-export ANTHROPIC_DEFAULT_HAIKU_MODEL=llama3.1:8b
+HAIKU_PROVIDER_API_KEY=dummy
+HAIKU_PROVIDER_BASE_URL=http://localhost:11434
 
 # Opus → GLM (paid, fast)
-export OPUS_PROVIDER_API_KEY=your_glm_api_key
-export OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
-export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6
+OPUS_PROVIDER_API_KEY=your_glm_api_key
+OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
-# Sonnet → Real Claude (premium)
-# No config needed
+# Sonnet → Real Claude (leave commented)
+# SONNET_PROVIDER_API_KEY=
+# SONNET_PROVIDER_BASE_URL=
+```
+
+**Set Claude Code env vars (shell):**
+```bash
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=llama3.1:8b
+export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6
+export ANTHROPIC_BASE_URL=http://localhost:8082
 ```
 
 Make sure Ollama is running:
@@ -301,21 +317,27 @@ ollama serve
 
 ### Example 4: All Local (Offline)
 
-Route all models to local Ollama:
+Route all models to local Ollama.
 
+**Edit `.env` file:**
 ```bash
 # All tiers use local Ollama
-export HAIKU_PROVIDER_API_KEY=dummy
-export HAIKU_PROVIDER_BASE_URL=http://localhost:11434
+HAIKU_PROVIDER_API_KEY=dummy
+HAIKU_PROVIDER_BASE_URL=http://localhost:11434
+
+OPUS_PROVIDER_API_KEY=dummy
+OPUS_PROVIDER_BASE_URL=http://localhost:11434
+
+SONNET_PROVIDER_API_KEY=dummy
+SONNET_PROVIDER_BASE_URL=http://localhost:11434
+```
+
+**Set Claude Code env vars (shell):**
+```bash
 export ANTHROPIC_DEFAULT_HAIKU_MODEL=llama3.1:8b
-
-export OPUS_PROVIDER_API_KEY=dummy
-export OPUS_PROVIDER_BASE_URL=http://localhost:11434
 export ANTHROPIC_DEFAULT_OPUS_MODEL=qwen2.5:14b
-
-export SONNET_PROVIDER_API_KEY=dummy
-export SONNET_PROVIDER_BASE_URL=http://localhost:11434
 export ANTHROPIC_DEFAULT_SONNET_MODEL=qwen2.5:32b
+export ANTHROPIC_BASE_URL=http://localhost:8082
 ```
 
 ---
