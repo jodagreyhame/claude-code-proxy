@@ -132,12 +132,15 @@ async def proxy_messages(request: Request):
         if "authorization" in original_headers:
             target_headers["Authorization"] = original_headers["authorization"]
 
-        # Forward Anthropic headers
-        for header in ["anthropic-version", "x-api-key"]:
+        # Forward Anthropic headers (anthropic-beta is CRITICAL for OAuth)
+        for header in ["anthropic-version", "anthropic-beta", "x-api-key"]:
             if header in original_headers:
                 target_headers[header] = original_headers[header]
 
-        print(f"[Proxy] {original_model} → Real Anthropic (OAuth)")
+        # Debug logging for auth method
+        auth_method = "OAuth" if "authorization" in original_headers else "API Key"
+        has_beta = "anthropic-beta" in original_headers
+        print(f"[Proxy] {original_model} → Real Anthropic ({auth_method}, beta={has_beta})")
 
     # Get persistent client from app state
     client = request.app.state.http_client

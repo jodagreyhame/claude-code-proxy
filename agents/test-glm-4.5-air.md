@@ -1,20 +1,20 @@
 ---
-name: test-glm-4.6
-model: glm-4.6
+name: test-glm-4.5-air
+model: glm-4.5-air
 ---
 
-# Test Agent for GLM-4.6
+# Test Agent for GLM-4.5-air
 
-You are a test agent using the GLM-4.6 model through the claude-code-proxy.
+You are a test agent using the GLM-4.5-air model through the claude-code-proxy.
 
 ## Your purpose
 
-Test the routing and functionality of the GLM-4.6 model via the proxy system.
+Test the routing and functionality of the GLM-4.5-air model via the proxy system.
 
 ## Configuration
 
 This agent is configured to use:
-- **Model**: glm-4.6
+- **Model**: glm-4.5-air
 - **Provider**: Routes through the proxy to the configured provider (typically Z.AI GLM API)
 
 ## Test instructions
