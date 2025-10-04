@@ -7,26 +7,26 @@ Routes each Claude Code model tier to different providers:
 - Opus → OPUS_PROVIDER (or custom model to any provider)
 - Sonnet → SONNET_PROVIDER (or Real Anthropic with OAuth if not set)
 
-Supports any Anthropic-compatible API (GLM, Gemini, Ollama, etc.)
+Supports any Anthropic-compatible API (GLM, etc.)
 
 Usage:
     # Configure providers for each tier
     export HAIKU_PROVIDER_API_KEY=your_glm_key
     export HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
-    export OPUS_PROVIDER_API_KEY=your_gemini_key
-    export OPUS_PROVIDER_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+    export OPUS_PROVIDER_API_KEY=your_glm_key
+    export OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
     # SONNET provider optional - defaults to real Anthropic with OAuth
-    # export SONNET_PROVIDER_API_KEY=your_key
-    # export SONNET_PROVIDER_BASE_URL=http://localhost:11434
+    # export SONNET_PROVIDER_API_KEY=your_glm_key
+    # export SONNET_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
     export PORT=8082  # Optional, defaults to 8082
 
     # Tell Claude Code what models to use
     export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
-    export ANTHROPIC_DEFAULT_OPUS_MODEL=gemini-1.5-pro
-    # export ANTHROPIC_DEFAULT_SONNET_MODEL=llama3.1  # Or leave unset for real Claude
+    export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6
+    # export ANTHROPIC_DEFAULT_SONNET_MODEL=glm-4-plus  # Or leave unset for real Claude
     export ANTHROPIC_BASE_URL=http://localhost:8082
 
     python proxy.py &
@@ -393,8 +393,8 @@ if __name__ == "__main__":
     print()
     print("Configure Claude Code:")
     print("  export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air")
-    print("  export ANTHROPIC_DEFAULT_OPUS_MODEL=gemini-1.5-pro")
-    print("  # export ANTHROPIC_DEFAULT_SONNET_MODEL=llama3.1  # Optional")
+    print("  export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6")
+    print("  # export ANTHROPIC_DEFAULT_SONNET_MODEL=glm-4-plus  # Optional")
     print(f"  export ANTHROPIC_BASE_URL=http://localhost:{PORT}")
     print()
     print(f"Starting proxy on http://localhost:{PORT}")

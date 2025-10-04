@@ -1,11 +1,15 @@
-# Custom Model Proxy for Claude Code
+# Claude Code Proxy: Weekly Rate Limits? Resolved!
 
-Route **each Claude Code model tier** to **different providers**! Use GLM for Haiku, Gemini for Opus, and keep Sonnet on your Claude subscription - all at the same time.
+Route **each Claude Code model tier** to **different providers**! Use [GLM](https://z.ai/subscribe?ic=CAO6LGU9S1) for Haiku/Opus and keep Sonnet on your [Claude](https://claude.ai/) subscription - all at the same time.
+
+## Why This Exists
+
+Apparently I'm one of the "2%" of users that should encounter or be affected by Anthropic's new weekly limits. So I built this proxy to route certain models to LLM providers of your choice - welcome to the good ol days when we didn't need to worry about hitting our weekly limit. These models work with agents too!
 
 ## Key Features
 
 - ✨ **3 independent providers** - Route Haiku, Opus, and Sonnet to different APIs simultaneously
-- 🔄 **Mix and match** - GLM for speed, Gemini for quality, Claude for premium, Ollama for local
+- 🔄 **Mix and match** - GLM for speed/cost, Claude for premium
 - 💰 **Cost optimized** - Route cheap tasks to alternatives, premium to Claude
 - 🔐 **OAuth preserved** - Keep your Claude subscription active for Sonnet
 - 🎯 **Dead simple** - Each tier configured with just 2 environment variables
@@ -17,35 +21,9 @@ Route **each Claude Code model tier** to **different providers**! Use GLM for Ha
 Claude Code UI          Proxy Routes To
 ─────────────────       ───────────────────────────────
 Haiku  (glm-4.5-air)    → GLM API
-Opus   (gemini-1.5-pro) → Gemini API
+Opus   (glm-4.6)        → GLM API
 Sonnet (claude-sonnet)  → Real Anthropic (OAuth)
 ```
-
-## Quick Start
-
-```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Configure providers in .env file
-cp .env.example .env
-# Edit .env with your API keys
-
-# 3. Configure Claude Code (shell environment only)
-export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
-export ANTHROPIC_DEFAULT_OPUS_MODEL=gemini-1.5-pro
-export ANTHROPIC_BASE_URL=http://localhost:8082  # ⚠️ CRITICAL
-
-# 4. Start proxy & use Claude Code
-python proxy.py &
-claude
-```
-
-**What goes where:**
-- **`.env` file** → Provider API keys and URLs (read by proxy)
-- **Shell env vars** → Claude Code model configs only
-
-**📖 [Full Setup Guide →](SETUP.md)** (includes Windows, troubleshooting, examples)
 
 ## How It Works
 
@@ -55,48 +33,99 @@ The proxy intercepts Claude Code's API requests:
 2. **Claude Code sends requests to:** `localhost:8082` instead of `api.anthropic.com`
 3. **Proxy checks model name:**
    - `glm-4.5-air` → Routes to GLM (HAIKU_PROVIDER_BASE_URL)
-   - `gemini-1.5-pro` → Routes to Gemini (OPUS_PROVIDER_BASE_URL)
+   - `glm-4.6` → Routes to GLM (OPUS_PROVIDER_BASE_URL)
    - `claude-sonnet-4-5` → Routes to real Anthropic (OAuth passthrough)
+
+## Quick Start
+
+**macOS/Linux:**
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Configure providers - Create .env file with:
+cat > .env << 'EOF'
+# GLM for Haiku (fast, cheap)
+HAIKU_PROVIDER_API_KEY=sk-glm-xxx
+HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
+
+# GLM for Opus (premium GLM)
+OPUS_PROVIDER_API_KEY=sk-glm-xxx
+OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
+
+# Sonnet uses OAuth (leave commented)
+# SONNET_PROVIDER_API_KEY=
+# SONNET_PROVIDER_BASE_URL=
+EOF
+
+# 3. Configure Claude Code (add to ~/.zshrc or ~/.bashrc)
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
+export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6
+export ANTHROPIC_BASE_URL=http://localhost:8082  # ⚠️ CRITICAL
+
+# 4. Start proxy & use Claude Code
+python proxy.py &
+claude
+```
+
+**Windows (PowerShell):**
+```powershell
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Configure providers - Create .env file with:
+@"
+# GLM for Haiku (fast, cheap)
+HAIKU_PROVIDER_API_KEY=sk-glm-xxx
+HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
+
+# GLM for Opus (premium GLM)
+OPUS_PROVIDER_API_KEY=sk-glm-xxx
+OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
+
+# Sonnet uses OAuth (leave commented)
+# SONNET_PROVIDER_API_KEY=
+# SONNET_PROVIDER_BASE_URL=
+"@ | Out-File -FilePath .env -Encoding utf8
+
+# 3. Configure Claude Code (add to PowerShell $PROFILE)
+$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.5-air"
+$env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-4.6"
+$env:ANTHROPIC_BASE_URL = "http://localhost:8082"  # ⚠️ CRITICAL
+
+# 4. Start proxy & use Claude Code
+Start-Process python -ArgumentList "proxy.py" -WindowStyle Hidden
+claude
+```
+
+**What goes where:**
+- **`.env` file** → Provider API keys and URLs (read by proxy)
+- **Shell env vars** → Claude Code model configs only
 
 ## Supported Providers
 
-- **GLM** (via Z.AI) - Fast, cheap Chinese models
-- **Google Gemini** - High-quality Google models
-- **Ollama** (local) - Free, offline local models
+- **[GLM](https://z.ai/subscribe?ic=CAO6LGU9S1)** (via Z.AI) - Fast, cheap Chinese models
+- **[Claude](https://claude.ai/)** - Premium Anthropic models via OAuth
 - **Any Anthropic-compatible API** - Works with any provider supporting `/v1/messages`
 
 ## Use Cases
 
-### Cost Optimization
 ```bash
-Haiku  → GLM (glm-4-flash)      # $0.01/1M tokens
-Opus   → Gemini (gemini-1.5-pro) # $1.25/1M tokens
-Sonnet → Claude (real)           # Your subscription
-```
-
-### Offline Development
-```bash
-Haiku  → Ollama (llama3.1:8b)
-Opus   → Ollama (qwen2.5:14b)
-Sonnet → Ollama (qwen2.5:32b)
-```
-
-### Hybrid Local + Cloud
-```bash
-Haiku  → Ollama (free, local)
-Opus   → GLM (cheap, fast)
-Sonnet → Claude (premium)
+Haiku  → GLM (glm-4.5-air)  # $0.01/1M tokens
+Opus   → GLM (glm-4.6)      # $0.02/1M tokens
+Sonnet → Claude (real)      # Your subscription
 ```
 
 ## Benefits
 
-✅ **Keep your Claude subscription** - Sonnet uses OAuth, no API key needed
-✅ **3 providers simultaneously** - Different provider for each tier
-✅ **Native Claude Code support** - Uses built-in environment variables
-✅ **Update-proof** - No SDK modifications, survives updates
-✅ **Transparent** - `/model` command shows actual model names
-✅ **Simple** - Just environment variables, no complex config
-✅ **Cross-platform** - macOS, Linux, Windows support
+| Benefit | Description |
+|---------|-------------|
+| ✅ **Keep your Claude subscription** | Uses OAuth, no API key needed |
+| ✅ **3 providers simultaneously** | Different provider for each tier |
+| ✅ **Native Claude Code support** | Uses built-in environment variables |
+| ✅ **Update-proof** | No SDK modifications, survives updates |
+| ✅ **Transparent** | `/model` command shows actual routed model names |
+| ✅ **Simple** | Just environment variables, no complex config |
 
 ## Requirements
 
@@ -104,48 +133,56 @@ Sonnet → Claude (premium)
 - Claude Code installed globally
 - Provider(s) with Anthropic-compatible API
 
-## Documentation
+## Using with Agents
 
-- **[SETUP.md](SETUP.md)** - Full installation guide (macOS/Linux/Windows)
-- **[.env.example](.env.example)** - Configuration template with examples
-- **[proxy.py](proxy.py)** - Source code (208 lines)
+Agents automatically use your configured models:
 
-## Quick Troubleshooting
-
-**Proxy not intercepting?**
-```bash
-# Verify this is set:
-echo $ANTHROPIC_BASE_URL  # Should output: http://localhost:8082
+```yaml
+---
+name: my-agent
+model: haiku  # Uses glm-4.5-air (your ANTHROPIC_DEFAULT_HAIKU_MODEL)
+---
 ```
 
-**Model not routing?**
+## Troubleshooting
+
+**Proxy not intercepting requests?**
+
+macOS/Linux:
 ```bash
-# Check proxy is running:
+echo $ANTHROPIC_BASE_URL  # Should output: http://localhost:8082
+# If empty: export ANTHROPIC_BASE_URL=http://localhost:8082
+```
+
+Windows:
+```powershell
+echo $env:ANTHROPIC_BASE_URL  # Should output: http://localhost:8082
+# If empty: $env:ANTHROPIC_BASE_URL = "http://localhost:8082"
+```
+
+**Check if proxy is running:**
+```bash
 curl http://localhost:8082/health
 ```
 
-**More help:** See [SETUP.md → Troubleshooting](SETUP.md#troubleshooting)
+Expected response:
+```json
+{
+  "status": "healthy",
+  "haiku": {"model": "glm-4.5-air", "provider_set": true},
+  "opus": {"model": "glm-4.6", "provider_set": true},
+  "sonnet": {"uses_oauth": true}
+}
+```
 
-## Example: Multi-Provider Setup
+**Models not routing correctly?**
+- Verify model names in `.env` match `ANTHROPIC_DEFAULT_*_MODEL` vars
+- Check proxy logs for routing info
+- Test provider API keys directly with `curl`
 
+**Sonnet OAuth not working?**
 ```bash
-# GLM for Haiku (fast, cheap)
-export HAIKU_PROVIDER_API_KEY=sk-glm-xxx
-export HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
-export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4-flash
-
-# Gemini for Opus (balanced)
-export OPUS_PROVIDER_API_KEY=AIza-xxx
-export OPUS_PROVIDER_BASE_URL=https://generativelanguage.googleapis.com/v1beta
-export ANTHROPIC_DEFAULT_OPUS_MODEL=gemini-1.5-pro
-
-# Claude for Sonnet (premium, OAuth)
-# No config needed - uses your subscription
-
-# Enable proxy
-export ANTHROPIC_BASE_URL=http://localhost:8082
-python proxy.py &
-claude
+claude --login  # Refresh your Claude session
 ```
 
 ## License
@@ -153,6 +190,3 @@ claude
 MIT
 
 ---
-
-**Made this?** [⭐ Star on GitHub](https://github.com/yourusername/claude-code-proxy)
-**Questions?** See [SETUP.md](SETUP.md) or open an issue
