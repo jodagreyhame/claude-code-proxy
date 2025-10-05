@@ -45,22 +45,23 @@ pip install -r requirements.txt
 
 # 2. Configure providers - Create .env file with:
 cat > .env << 'EOF'
-# GLM for Haiku (fast, cheap)
+# Provider configurations
 HAIKU_PROVIDER_API_KEY=sk-glm-xxx
 HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
-# GLM for Opus (premium GLM)
 OPUS_PROVIDER_API_KEY=sk-glm-xxx
 OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
 # Sonnet uses OAuth (leave commented)
 # SONNET_PROVIDER_API_KEY=
 # SONNET_PROVIDER_BASE_URL=
+
+# Model name configuration
+ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.6
+ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.5-air
 EOF
 
 # 3. Configure Claude Code (add to ~/.zshrc or ~/.bashrc)
-export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.6
-export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.5-air
 export ANTHROPIC_BASE_URL=http://localhost:8082  # ⚠️ CRITICAL
 
 # 4. Start proxy & use Claude Code
@@ -75,22 +76,23 @@ pip install -r requirements.txt
 
 # 2. Configure providers - Create .env file with:
 @"
-# GLM for Haiku (fast, cheap)
+# Provider configurations
 HAIKU_PROVIDER_API_KEY=sk-glm-xxx
 HAIKU_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
-# GLM for Opus (premium GLM)
 OPUS_PROVIDER_API_KEY=sk-glm-xxx
 OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 
 # Sonnet uses OAuth (leave commented)
 # SONNET_PROVIDER_API_KEY=
 # SONNET_PROVIDER_BASE_URL=
+
+# Model name configuration
+ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.6
+ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.5-air
 "@ | Out-File -FilePath .env -Encoding utf8
 
 # 3. Configure Claude Code (add to PowerShell $PROFILE)
-$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.6"
-$env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-4.5-air"
 $env:ANTHROPIC_BASE_URL = "http://localhost:8082"  # ⚠️ CRITICAL
 
 # 4. Start proxy & use Claude Code
@@ -99,8 +101,8 @@ claude
 ```
 
 **What goes where:**
-- **`.env` file** → Provider API keys and URLs (read by proxy)
-- **Shell env vars** → Claude Code model configs only
+- **`.env` file** → Provider configs + model name mappings (read by proxy)
+- **Shell env vars** → Only `ANTHROPIC_BASE_URL` pointing to localhost:8082
 
 ## Supported Providers
 
