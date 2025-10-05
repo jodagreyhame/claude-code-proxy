@@ -24,8 +24,8 @@ Usage:
     export PORT=8082  # Optional, defaults to 8082
 
     # Tell Claude Code what models to use
-    export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
-    export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6
+    export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.6
+    export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.5-air
     # export ANTHROPIC_DEFAULT_SONNET_MODEL=glm-4-plus  # Or leave unset for real Claude
     export ANTHROPIC_BASE_URL=http://localhost:8082
 
@@ -340,6 +340,126 @@ async def proxy_messages(request: Request):
         )
 
 
+@app.post("/v1/messages/count_tokens")
+async def proxy_count_tokens(request: Request):
+    """
+    Count tokens in a message before sending it.
+
+    Note: This endpoint is only supported by real Anthropic API.
+    Third-party providers (like GLM) typically don't support token counting.
+    Returns 501 Not Implemented for unsupported providers with helpful guidance.
+    """
+    data = await request.json()
+    original_model = data.get("model", "")
+    original_headers = dict(request.headers)
+
+    # Check which provider would handle this model
+    provider_config = get_provider_config(original_model)
+
+    if provider_config:
+        # Custom provider (GLM, etc.) - most don't support count_tokens
+        api_key, base_url, provider_name, provider_semaphore = provider_config
+
+        logger.warning(f"[count_tokens] {original_model} → {provider_name} (unsupported endpoint)")
+
+        # Return helpful error for unsupported providers
+        return JSONResponse(
+            status_code=501,  # Not Implemented
+            content={
+                "type": "error",
+                "error": {
+                    "type": "not_implemented_error",
+                    "message": f"Token counting is not supported by {provider_name}. Token usage is available in the response from /v1/messages requests."
+                }
+            }
+        )
+    else:
+        # Real Anthropic with OAuth passthrough - supports count_tokens
+        target_url = f"{ANTHROPIC_BASE_URL}/v1/messages/count_tokens"
+        target_headers = {"Content-Type": "application/json"}
+
+        # Forward OAuth token
+        if "authorization" in original_headers:
+            target_headers["Authorization"] = original_headers["authorization"]
+
+        # Forward Anthropic headers (anthropic-beta is CRITICAL for OAuth)
+        for header in ["anthropic-version", "anthropic-beta", "x-api-key"]:
+            if header in original_headers:
+                target_headers[header] = original_headers[header]
+
+        logger.info(f"[count_tokens] {original_model} → Real Anthropic")
+
+        # Get persistent client from app state
+        client = request.app.state.http_client
+
+        # Forward request with retry logic
+        for attempt in range(MAX_RETRIES):
+            try:
+                response = await client.post(
+                    target_url, json=data, headers=target_headers
+                )
+
+                # Handle rate limiting (429)
+                if response.status_code == 429 and attempt < MAX_RETRIES - 1:
+                    retry_after = response.headers.get("retry-after")
+                    if retry_after:
+                        retry_delay = float(retry_after)
+                    else:
+                        retry_delay = calculate_retry_delay(attempt)
+
+                    logger.warning(f"[count_tokens 429 Rate Limited] Retrying in {retry_delay:.2f}s (attempt {attempt + 1}/{MAX_RETRIES})")
+                    await asyncio.sleep(retry_delay)
+                    continue
+
+                return Response(
+                    content=response.content,
+                    status_code=response.status_code,
+                    headers=dict(response.headers)
+                )
+
+            except httpx.ReadTimeout:
+                logger.error(f"[count_tokens Read Timeout] {original_model} (attempt {attempt + 1}/{MAX_RETRIES})")
+                if attempt < MAX_RETRIES - 1:
+                    retry_delay = calculate_retry_delay(attempt)
+                    logger.warning(f"[Retry] Retrying in {retry_delay:.2f}s...")
+                    await asyncio.sleep(retry_delay)
+                    continue
+                return JSONResponse(
+                    status_code=504,
+                    content={"error": "Gateway timeout - provider did not respond in time"}
+                )
+
+            except httpx.ConnectTimeout:
+                logger.error(f"[count_tokens Connect Timeout] {original_model} (attempt {attempt + 1}/{MAX_RETRIES})")
+                if attempt < MAX_RETRIES - 1:
+                    retry_delay = calculate_retry_delay(attempt)
+                    logger.warning(f"[Retry] Retrying in {retry_delay:.2f}s...")
+                    await asyncio.sleep(retry_delay)
+                    continue
+                return JSONResponse(
+                    status_code=504,
+                    content={"error": "Gateway timeout - could not connect to provider"}
+                )
+
+            except Exception as e:
+                logger.error(f"[count_tokens Error] {original_model} (attempt {attempt + 1}/{MAX_RETRIES}): {type(e).__name__} - {e}")
+                if attempt < MAX_RETRIES - 1:
+                    retry_delay = calculate_retry_delay(attempt)
+                    logger.warning(f"[Retry] Retrying in {retry_delay:.2f}s...")
+                    await asyncio.sleep(retry_delay)
+                    continue
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": f"Internal proxy error: {str(e)}"}
+                )
+
+        # Should not reach here
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Max retries exceeded"}
+        )
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
@@ -392,8 +512,8 @@ if __name__ == "__main__":
     print(f"  • {SONNET_MODEL} → {'Custom Sonnet Provider' if SONNET_BASE_URL else 'Real Anthropic'}")
     print()
     print("Configure Claude Code:")
-    print("  export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air")
-    print("  export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6")
+    print("  export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.6")
+    print("  export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.5-air")
     print("  # export ANTHROPIC_DEFAULT_SONNET_MODEL=glm-4-plus  # Optional")
     print(f"  export ANTHROPIC_BASE_URL=http://localhost:{PORT}")
     print()

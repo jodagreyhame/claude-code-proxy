@@ -20,8 +20,8 @@ Apparently I'm one of the "2%" of users that should encounter or be affected by 
 ```
 Claude Code UI          Proxy Routes To
 ─────────────────       ───────────────────────────────
-Haiku  (glm-4.5-air)    → GLM API
-Opus   (glm-4.6)        → GLM API
+Haiku  (glm-4.6)        → GLM API
+Opus   (glm-4.5-air)    → GLM API
 Sonnet (claude-sonnet)  → Real Anthropic (OAuth)
 ```
 
@@ -32,8 +32,8 @@ The proxy intercepts Claude Code's API requests:
 1. **You set:** `ANTHROPIC_BASE_URL=http://localhost:8082`
 2. **Claude Code sends requests to:** `localhost:8082` instead of `api.anthropic.com`
 3. **Proxy checks model name:**
-   - `glm-4.5-air` → Routes to GLM (HAIKU_PROVIDER_BASE_URL)
-   - `glm-4.6` → Routes to GLM (OPUS_PROVIDER_BASE_URL)
+   - `glm-4.6` → Routes to GLM (HAIKU_PROVIDER_BASE_URL)
+   - `glm-4.5-air` → Routes to GLM (OPUS_PROVIDER_BASE_URL)
    - `claude-sonnet-4-5` → Routes to real Anthropic (OAuth passthrough)
 
 ## Quick Start
@@ -59,8 +59,8 @@ OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 EOF
 
 # 3. Configure Claude Code (add to ~/.zshrc or ~/.bashrc)
-export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
-export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.6
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.6
+export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.5-air
 export ANTHROPIC_BASE_URL=http://localhost:8082  # ⚠️ CRITICAL
 
 # 4. Start proxy & use Claude Code
@@ -89,8 +89,8 @@ OPUS_PROVIDER_BASE_URL=https://api.z.ai/api/anthropic
 "@ | Out-File -FilePath .env -Encoding utf8
 
 # 3. Configure Claude Code (add to PowerShell $PROFILE)
-$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.5-air"
-$env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-4.6"
+$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.6"
+$env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-4.5-air"
 $env:ANTHROPIC_BASE_URL = "http://localhost:8082"  # ⚠️ CRITICAL
 
 # 4. Start proxy & use Claude Code
@@ -111,8 +111,8 @@ claude
 ## Use Cases
 
 ```bash
-Haiku  → GLM (glm-4.5-air)  # $0.01/1M tokens
-Opus   → GLM (glm-4.6)      # $0.02/1M tokens
+Haiku  → GLM (glm-4.6)      # $0.02/1M tokens
+Opus   → GLM (glm-4.5-air)  # $0.01/1M tokens
 Sonnet → Claude (real)      # Your subscription
 ```
 
@@ -140,9 +140,23 @@ Agents automatically use your configured models:
 ```yaml
 ---
 name: my-agent
-model: haiku  # Uses glm-4.5-air (your ANTHROPIC_DEFAULT_HAIKU_MODEL)
+model: haiku  # Uses glm-4.6 (your ANTHROPIC_DEFAULT_HAIKU_MODEL)
 ---
 ```
+
+## API Endpoint Support
+
+The proxy implements the following Anthropic API endpoints:
+
+| Endpoint | GLM Providers | Real Anthropic | Notes |
+|----------|--------------|----------------|-------|
+| `POST /v1/messages` | ✅ Full support | ✅ Full support | Main chat completion endpoint |
+| `POST /v1/messages/count_tokens` | ⚠️ Returns 501 | ✅ Full support | Token counting before sending. GLM doesn't support this - use token counts from message responses instead |
+| `GET /health` | ✅ Proxy health | ✅ Proxy health | Proxy status endpoint (not forwarded to providers) |
+
+**About Token Counting:**
+- **Sonnet (Real Anthropic)**: Token counting works normally via `/v1/messages/count_tokens`
+- **Haiku/Opus (GLM)**: Token counting returns HTTP 501 with a helpful message. Token usage is still available in every `/v1/messages` response under the `usage` field.
 
 ## Troubleshooting
 
@@ -169,8 +183,8 @@ Expected response:
 ```json
 {
   "status": "healthy",
-  "haiku": {"model": "glm-4.5-air", "provider_set": true},
-  "opus": {"model": "glm-4.6", "provider_set": true},
+  "haiku": {"model": "glm-4.6", "provider_set": true},
+  "opus": {"model": "glm-4.5-air", "provider_set": true},
   "sonnet": {"uses_oauth": true}
 }
 ```
