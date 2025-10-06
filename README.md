@@ -62,6 +62,8 @@ ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.5-air
 EOF
 
 # 3. Configure Claude Code (add to ~/.zshrc or ~/.bashrc)
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.6
+export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.5-air
 export ANTHROPIC_BASE_URL=http://localhost:8082  # ⚠️ CRITICAL
 
 # 4. Start proxy & use Claude Code
@@ -93,6 +95,8 @@ ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.5-air
 "@ | Out-File -FilePath .env -Encoding utf8
 
 # 3. Configure Claude Code (add to PowerShell $PROFILE)
+$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.6"
+$env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-4.5-air"
 $env:ANTHROPIC_BASE_URL = "http://localhost:8082"  # ⚠️ CRITICAL
 
 # 4. Start proxy & use Claude Code
@@ -102,7 +106,7 @@ claude
 
 **What goes where:**
 - **`.env` file** → Provider configs + model name mappings (read by proxy)
-- **Shell env vars** → Only `ANTHROPIC_BASE_URL` pointing to localhost:8082
+- **Shell env vars** → Model names (`ANTHROPIC_DEFAULT_*_MODEL`) + base URL pointing to localhost:8082
 
 ## Supported Providers
 
@@ -167,13 +171,23 @@ The proxy implements the following Anthropic API endpoints:
 macOS/Linux:
 ```bash
 echo $ANTHROPIC_BASE_URL  # Should output: http://localhost:8082
-# If empty: export ANTHROPIC_BASE_URL=http://localhost:8082
+echo $ANTHROPIC_DEFAULT_HAIKU_MODEL  # Should output: glm-4.6
+echo $ANTHROPIC_DEFAULT_OPUS_MODEL   # Should output: glm-4.5-air
+# If empty, add to ~/.zshrc or ~/.bashrc:
+# export ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.6
+# export ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.5-air
+# export ANTHROPIC_BASE_URL=http://localhost:8082
 ```
 
 Windows:
 ```powershell
 echo $env:ANTHROPIC_BASE_URL  # Should output: http://localhost:8082
-# If empty: $env:ANTHROPIC_BASE_URL = "http://localhost:8082"
+echo $env:ANTHROPIC_DEFAULT_HAIKU_MODEL  # Should output: glm-4.6
+echo $env:ANTHROPIC_DEFAULT_OPUS_MODEL   # Should output: glm-4.5-air
+# If empty, add to PowerShell $PROFILE:
+# $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.6"
+# $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-4.5-air"
+# $env:ANTHROPIC_BASE_URL = "http://localhost:8082"
 ```
 
 **Check if proxy is running:**
