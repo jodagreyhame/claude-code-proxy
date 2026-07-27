@@ -119,6 +119,24 @@ opus_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
 sonnet_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
 
 
+# httpx transparently decompresses the upstream response body, so the upstream
+# Content-Encoding and Content-Length no longer describe what we forward. Passing
+# them through makes the client try to gunzip plaintext (CURLE_BAD_CONTENT_ENCODING).
+# Dropping them lets the ASGI server compute correct values for the body we send.
+HOP_BY_HOP_HEADERS = frozenset({
+    "content-encoding",
+    "content-length",
+    "transfer-encoding",
+    "connection",
+    "keep-alive",
+})
+
+
+def passthrough_headers(headers) -> dict:
+    """Upstream headers minus the ones describing the original transport encoding."""
+    return {k: v for k, v in headers.items() if k.lower() not in HOP_BY_HOP_HEADERS}
+
+
 def get_provider_config(model_name: str):
     """
     Determine which provider to route to based on model name.
@@ -285,7 +303,7 @@ async def proxy_messages(request: Request):
                     return Response(
                         content=response.content,
                         status_code=response.status_code,
-                        headers=dict(response.headers)
+                        headers=passthrough_headers(response.headers)
                     )
 
             except httpx.ReadTimeout:
@@ -414,7 +432,7 @@ async def proxy_count_tokens(request: Request):
                 return Response(
                     content=response.content,
                     status_code=response.status_code,
-                    headers=dict(response.headers)
+                    headers=passthrough_headers(response.headers)
                 )
 
             except httpx.ReadTimeout:
